@@ -296,6 +296,56 @@ class ArxivClient:
         )
         self._client.query_url_format = "https://export.arxiv.org/api/query?{}"
 
+    def search(
+        self,
+        query: str,
+        *,
+        limit: int = 10,
+        year_since: int | None = None,
+    ) -> list[S2SearchResult]:
+        """Free-text discovery search — used as fallback when S2 is unavailable.
+
+        Returns ``S2SearchResult``-shaped rows so the RetrievalAgent's
+        downstream dedup + PDF-fallback chain stays unchanged. ``paper_id``
+        is prefixed with ``arxiv:`` to keep ID space disjoint from S2.
+
+        ``citation_count`` is ``None`` (arXiv API does not expose it).
+        ``pdf_url`` is left ``None`` so the agent's PDF resolution path
+        uses the ``arxiv_id`` route through ``lookup_by_id`` — identical
+        to the regular S2-then-arXiv flow, just without S2.
+        """
+        arxiv_query = query
+        if year_since:
+            arxiv_query = (
+                f"({query}) AND submittedDate:"
+                f"[{year_since}01010000 TO 99991231235959]"
+            )
+        search = arxiv.Search(
+            query=arxiv_query,
+            max_results=limit,
+            sort_by=arxiv.SortCriterion.Relevance,
+        )
+        out: list[S2SearchResult] = []
+        for result in self._client.results(search):
+            match = self._to_match(result)
+            authors = [a.name for a in (result.authors or [])]
+            year = result.published.year if result.published else None
+            out.append(
+                S2SearchResult(
+                    paper_id=f"arxiv:{match.arxiv_id}",
+                    title=match.title,
+                    authors=authors,
+                    year=year,
+                    venue="arXiv",
+                    citation_count=None,
+                    abstract=result.summary,
+                    pdf_url=None,
+                    arxiv_id=match.arxiv_id,
+                    doi=None,
+                )
+            )
+        return out
+
     def lookup_by_id(self, arxiv_id: str) -> ArxivMatch | None:
         """Direct ID lookup — used when ``S2SearchResult.arxiv_id`` is present.
 

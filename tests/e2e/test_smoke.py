@@ -163,7 +163,7 @@ def _normalize_state_dict(d: dict[str, Any]) -> dict[str, Any]:
 def _build_orch(tmp_path: Path, run_id: str, git_sha: str, question: str) -> Orchestrator:
     settings = Settings(
         runs_dir=str(tmp_path / "runs"),
-        llm_model="gemini/gemini-2.5-flash",
+        llm_model="gemini/gemini-2.5-flash-lite",
     )
     return Orchestrator(
         settings,

@@ -9,20 +9,20 @@
 
 ## Table of contents
 
-1. [What this project does](#what-this-project-does)
+1. [Overview](#overview)
 2. [Repository layout](#repository-layout)
 3. [Architecture](#architecture)
 4. [Setup](#setup)
-5. [Running the project](#running-the-project)
-6. [Running the live demo](#running-the-live-demo)
+5. [Usage](#usage)
+6. [Demo](#demo)
 7. [Tests](#tests)
-8. [Reproducibility guarantees](#reproducibility-guarantees)
+8. [Reproducibility](#reproducibility)
 9. [Troubleshooting](#troubleshooting)
 10. [License](#license)
 
 ---
 
-## What this project does
+## Overview
 
 `ara` automates the most tedious half of a literature review:
 
@@ -194,6 +194,17 @@ Total: **4N+2** LLM calls. For 10 papers: 42 calls.
 
 Every generated claim carries a citation in the format `[P<paper_id>-N]` where `paper_id` is pinned inside the marker (e.g. `[Parxiv:2401.15391-3]`). This format is enforced by a Pydantic `field_validator` on `Claim.citations`, so attribution drift between papers is impossible.
 
+### Module map
+
+The six agents live under one package:
+
+- `ara.agents.query` — query expansion + LLM-as-judge filter
+- `ara.agents.retrieval` — S2 + arXiv discovery, dedup, PDF fallback chain
+- `ara.agents.extraction` — PyMuPDF span-level parsing + injection scrub
+- `ara.agents.indexing` — chunker + MiniLM embeddings + FAISS `IndexFlatIP`
+- `ara.agents.analysis` — hierarchical RAG (4N+2 calls) + per-claim verifier
+- `ara.agents.report` — Jinja2 LaTeX template + BibTeX collision-resolver + `latexmk` gate
+
 ---
 
 ## Setup
@@ -243,7 +254,7 @@ Without `latexmk`, the report agent still writes `report.tex` + `references.bib`
 
 ---
 
-## Running the project
+## Usage
 
 All commands run under `uv run` so they pick up the hermetic `.venv/` and the `ara` console entry point.
 
@@ -294,7 +305,7 @@ uv run ara clean --all --yes           # delete all (no prompt with --yes)
 
 ---
 
-## Running the live demo
+## Demo
 
 There are **three demo paths**. Combine them for safety.
 
@@ -372,7 +383,7 @@ Tests are offline by design: `pytest-socket --disable-socket` is in `pyproject.t
 
 ---
 
-## Reproducibility guarantees
+## Reproducibility
 
 Every reproducibility claim is mechanised — no "trust us":
 

@@ -38,6 +38,7 @@ class RetrievalStats(BaseModel):
     s2_requests: int = 0
     s2_429_retries: int = 0
     s2_total_results: int = 0
+    arxiv_discovery_hits: int = 0
     arxiv_fallback_hits: int = 0
     pdf_download_count: int = 0
     pdf_download_bytes: int = 0

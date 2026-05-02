@@ -5,6 +5,13 @@ Per-run flow:
        A per-term transport failure is caught narrowly (httpx.HTTPError /
        httpx.TimeoutException / tenacity.RetryError) and the term is
        silently skipped — retrieval continues with remaining terms.
+    1b. **arXiv-as-discovery fallback.** If S2 returns zero hits across
+        all terms (e.g., the run's IP got 429-throttled by S2 the way
+        the 2026-05-02 demo runs did), retry the same terms via
+        ``ArxivClient.search(term)``. Returns ``S2SearchResult``-shaped
+        rows with ``paper_id="arxiv:<id>"``, so the rest of the pipeline
+        is identical. Tracked in
+        ``RetrievalStats.arxiv_discovery_hits``.
     2. Merge results across terms with two dedup passes:
          (a) Primary key = ``S2SearchResult.paper_id``.
          (b) Secondary key = ``(normalize_title(title), first_author.lower(), year)``
@@ -133,6 +140,41 @@ class RetrievalAgent:
             else:
                 all_hits.extend(results)
 
+        arxiv_discovery_hits_count = 0
+        if not all_hits:
+            log.warning(
+                "s2_zero_results_arxiv_discovery_fallback",
+                terms=state.search_terms,
+            )
+            empty_terms = []
+            for term in state.search_terms:
+                try:
+                    results = self.arxiv.search(
+                        term,
+                        limit=self.per_term_limit,
+                        year_since=self.year_since,
+                    )
+                except (
+                    httpx.HTTPError,
+                    httpx.TimeoutException,
+                    tenacity.RetryError,
+                    OSError,
+                    RuntimeError,
+                ) as exc:
+                    log.warning(
+                        "arxiv_discovery_term_failed",
+                        term=term,
+                        error=str(exc),
+                        error_type=type(exc).__name__,
+                    )
+                    empty_terms.append(term)
+                    continue
+                if not results:
+                    empty_terms.append(term)
+                else:
+                    all_hits.extend(results)
+                    arxiv_discovery_hits_count += len(results)
+
         by_id: dict[str, S2SearchResult] = {}
         for hit in all_hits:
             if hit.paper_id and hit.paper_id not in by_id:
@@ -251,6 +293,7 @@ class RetrievalAgent:
             s2_requests=s2_requests,
             s2_429_retries=0,
             s2_total_results=s2_total_results,
+            arxiv_discovery_hits=arxiv_discovery_hits_count,
             arxiv_fallback_hits=arxiv_fallback_hits,
             pdf_download_count=pdf_download_count,
             pdf_download_bytes=pdf_download_bytes,

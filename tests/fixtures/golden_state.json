@@ -12,7 +12,7 @@
   "config_snapshot": {
     "cached_only": false,
     "git_sha": "GOLDEN",
-    "model": "gemini/gemini-2.5-flash",
+    "model": "gemini/gemini-2.5-flash-lite",
     "temperature": 0.0
   },
   "extraction_stats": {
@@ -100,6 +100,7 @@
   },
   "retrieval_stats": {
     "abstract_only_count": 1,
+    "arxiv_discovery_hits": 0,
     "arxiv_fallback_hits": 0,
     "duration_ms": 0,
     "empty_query_terms": [],

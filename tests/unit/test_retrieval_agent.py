@@ -55,6 +55,8 @@ class _FakeS2:
 class _FakeArxiv:
     by_id: dict[str, ArxivMatch | None] = field(default_factory=dict)
     by_title: dict[str, ArxivMatch | None] = field(default_factory=dict)
+    search_responses: dict[str, list[S2SearchResult]] = field(default_factory=dict)
+    search_calls: list[str] = field(default_factory=list)
 
     def lookup_by_id(self, arxiv_id: str) -> ArxivMatch | None:
         return self.by_id.get(arxiv_id)
@@ -63,6 +65,12 @@ class _FakeArxiv:
         self, title: str, year=None, accept_threshold: float = 0.8
     ) -> ArxivMatch | None:
         return self.by_title.get(title)
+
+    def search(
+        self, query: str, *, limit: int = 10, year_since=None
+    ) -> list[S2SearchResult]:
+        self.search_calls.append(query)
+        return list(self.search_responses.get(query, []))
 
 
 @dataclass
@@ -317,14 +325,103 @@ def test_retrieval_emits_stage_report(tmp_path):
 
 
 def test_zero_results_empty_papers_continues_cleanly(tmp_path):
-    """All terms return zero results -> no papers, stats populated, no raise."""
+    """All terms return zero results AND arxiv-fallback also empty -> no papers."""
     s2 = _FakeS2(responses={"q1": [], "q2": []})
+    arx = _FakeArxiv(search_responses={"q1": [], "q2": []})
     state = _make_state(tmp_path, ["q1", "q2"])
     out = RetrievalAgent(
-        s2=s2, arxiv=_FakeArxiv(), downloader=_FakePdfDownloader()
+        s2=s2, arxiv=arx, downloader=_FakePdfDownloader()
     ).run(state)
     assert out.papers == []
     assert set(out.retrieval_stats.empty_query_terms) == {"q1", "q2"}
+    assert out.retrieval_stats.arxiv_discovery_hits == 0
+
+
+def test_arxiv_discovery_fallback_when_s2_returns_empty(tmp_path):
+    """S2 returns 0 across all terms -> ArxivClient.search() takes over."""
+    arxiv_hit = _s2_result(
+        "arxiv:2005.11401",
+        "Discovered Via Arxiv",
+        arxiv_id="2005.11401",
+    )
+    s2 = _FakeS2(responses={"q": []})
+    arx = _FakeArxiv(
+        search_responses={"q": [arxiv_hit]},
+        by_id={
+            "2005.11401": ArxivMatch(
+                arxiv_id="2005.11401v1",
+                title="Discovered Via Arxiv",
+                pdf_url="https://export.arxiv.org/pdf/2005.11401v1",
+                withdrawn=False,
+            )
+        },
+    )
+    dl = _FakePdfDownloader(
+        responses={"https://export.arxiv.org/pdf/2005.11401v1": 50_000}
+    )
+    state = _make_state(tmp_path, ["q"])
+    out = RetrievalAgent(s2=s2, arxiv=arx, downloader=dl).run(state)
+    assert len(out.papers) == 1
+    assert out.papers[0].title == "Discovered Via Arxiv"
+    assert out.papers[0].pdf_source == "arxiv"
+    assert out.retrieval_stats.arxiv_discovery_hits == 1
+    assert arx.search_calls == ["q"]
+
+
+def test_arxiv_discovery_fallback_when_all_s2_terms_429(tmp_path):
+    """All S2 terms raise 429 -> arxiv-discovery fallback still runs."""
+    req = httpx.Request("GET", "https://api.semanticscholar.org/graph/v1/paper/search")
+    s2 = _FakeS2(
+        errors={
+            "t1": httpx.HTTPStatusError(
+                "429", request=req, response=httpx.Response(429, request=req)
+            ),
+            "t2": httpx.HTTPStatusError(
+                "429", request=req, response=httpx.Response(429, request=req)
+            ),
+        }
+    )
+    arxiv_hit = _s2_result(
+        "arxiv:1234.5678", "Saved By Arxiv", arxiv_id="1234.5678"
+    )
+    arx = _FakeArxiv(
+        search_responses={"t1": [arxiv_hit], "t2": []},
+        by_id={
+            "1234.5678": ArxivMatch(
+                arxiv_id="1234.5678",
+                title="Saved By Arxiv",
+                pdf_url="https://export.arxiv.org/pdf/1234.5678",
+                withdrawn=False,
+            )
+        },
+    )
+    dl = _FakePdfDownloader(
+        responses={"https://export.arxiv.org/pdf/1234.5678": 50_000}
+    )
+    state = _make_state(tmp_path, ["t1", "t2"])
+    out = RetrievalAgent(s2=s2, arxiv=arx, downloader=dl).run(state)
+    assert len(out.papers) == 1
+    assert out.papers[0].title == "Saved By Arxiv"
+    assert out.retrieval_stats.arxiv_discovery_hits == 1
+    assert "t2" in out.retrieval_stats.empty_query_terms
+    assert arx.search_calls == ["t1", "t2"]
+
+
+def test_arxiv_discovery_not_invoked_when_s2_has_any_hits(tmp_path):
+    """S2 returning even one paper means no arxiv-discovery fallback fires."""
+    s2_hit = _s2_result("p1", "From S2")
+    s2 = _FakeS2(responses={"q": [s2_hit]})
+    arx = _FakeArxiv(
+        search_responses={"q": [_s2_result("arxiv:9999.0001", "Should Not Be Used")]}
+    )
+    state = _make_state(tmp_path, ["q"])
+    out = RetrievalAgent(
+        s2=s2, arxiv=arx, downloader=_FakePdfDownloader()
+    ).run(state)
+    assert len(out.papers) == 1
+    assert out.papers[0].title == "From S2"
+    assert out.retrieval_stats.arxiv_discovery_hits == 0
+    assert arx.search_calls == []
 
 
 def test_per_paper_download_failure_isolated(tmp_path):
