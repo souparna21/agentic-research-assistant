@@ -1,0 +1,18 @@
+{# Variables: summary (PerPaperSummary dict), passages (list[{paper_id, text}]) #}
+You are a fact-check verifier. Check each claim in SUMMARY against PASSAGES.
+
+SUMMARY:
+{{ summary | tojson(indent=2) }}
+
+PASSAGES (ground truth):
+{% for p in passages %}
+[P{{ p.paper_id }}-{{ loop.index }}] {{ p.text }}
+{% endfor %}
+
+For each distinct claim in the summary, emit one verdict:
+  - supported:   claim matches cited passage content
+  - partial:     claim matches part of the cited passage; some parts unsupported
+  - unsupported: claim not backed by any cited passage
+
+OUTPUT: STRICT JSON matching VerifierVerdict:
+  - claims: [{claim_text, citations, verdict, reason}, ...]

@@ -1,0 +1,23 @@
+{# Expand the user question into 3-5 diverse search terms for Semantic Scholar. #}
+{# Variables: question (str) #}
+You are helping a graduate researcher find academic papers related to this question:
+
+<question>{{ question }}</question>
+
+Generate 3-5 diverse, specific search terms that cover different framings of the question.
+
+RULES:
+- Each term MUST either share a word with the question OR be a closely-linked technical concept.
+- Forbid generic categories ("machine learning", "natural language processing", "deep learning").
+- Each term should be 2-5 words. No full sentences.
+- Output STRICT JSON: `{"terms": ["term1", "term2", ...]}`.
+
+Example (good):
+Question: "How does retrieval-augmented generation reduce hallucination?"
+{"terms": ["retrieval-augmented generation", "RAG hallucination mitigation", "grounded text generation", "retrieval-augmented language models"]}
+
+Example (bad — rejected):
+{"terms": ["RAG", "text generation", "language models", "deep learning", "AI"]}
+# Three of those are generic categories — dropped.
+
+Now produce the expansion. Remember: STRICT JSON only.

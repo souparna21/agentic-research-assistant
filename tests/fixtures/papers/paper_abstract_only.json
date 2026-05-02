@@ -1,0 +1,16 @@
+{
+  "paper_id": "s2:abstract-only-fixture-001",
+  "title": "Abstract-Only Fixture Paper (no PDF available)",
+  "authors": ["Fixture Author"],
+  "year": 2023,
+  "venue": "Phase-1 Fixture",
+  "citation_count": 42,
+  "abstract": "This fixture exercises the abstract-only degradation path. No PDF is downloadable; the pipeline must handle this without halting.",
+  "pdf_url": null,
+  "pdf_path": null,
+  "pdf_source": "abstract-only",
+  "extracted_md_path": null,
+  "extraction_ok": false,
+  "fallback_to_abstract": true,
+  "full_text_available": false
+}

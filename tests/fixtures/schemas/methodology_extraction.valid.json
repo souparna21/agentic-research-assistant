@@ -1,0 +1,6 @@
+{
+  "paper_id": "paper1",
+  "datasets": ["Natural Questions", "TriviaQA"],
+  "techniques": ["Dense Passage Retrieval", "BART seq2seq"],
+  "metrics": ["Exact Match", "F1"]
+}

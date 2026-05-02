@@ -1,0 +1,21 @@
+{
+  "total": 1,
+  "offset": 0,
+  "data": [
+    {
+      "paperId": "df2b0e26d0599ce3e70df8a9da02e51594e0e992",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "authors": [
+        {"authorId": "144053654", "name": "Patrick Lewis"},
+        {"authorId": "1692614", "name": "Ethan Perez"}
+      ],
+      "year": 2020,
+      "venue": "NeurIPS",
+      "citationCount": 4200,
+      "abstract": "We introduce retrieval-augmented generation (RAG), a hybrid generation model that combines parametric and non-parametric memory for knowledge-intensive NLP tasks.",
+      "openAccessPdf": {"url": "https://arxiv.org/pdf/2005.11401.pdf", "status": "GREEN"},
+      "externalIds": {"ArXiv": "2005.11401", "DOI": "10.48550/arXiv.2005.11401"},
+      "tldr": {"model": "tldr@v2.0.0", "text": "A hybrid parametric/non-parametric model for knowledge-intensive NLP."}
+    }
+  ]
+}

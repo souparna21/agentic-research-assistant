@@ -1,0 +1,15 @@
+{# Variables: paper, passages #}
+Extract stated limitations and future-work ideas.
+
+PAPER: "{{ paper.title | replace('"', "'") }}" (paper_id={{ paper.paper_id }})
+
+PASSAGES:
+{% for p in passages %}
+[P{{ paper.paper_id }}-{{ loop.index }}] {{ p.text }}
+{% endfor %}
+
+OUTPUT: STRICT JSON matching LimitationsExtraction:
+  - paper_id: "{{ paper.paper_id }}"
+  - limitations: [{text, citations: ["[P{{ paper.paper_id }}-N]"]}, ...]
+  - future_work: [{text, citations: [...]}, ...]
+Every item MUST cite >= 1 passage.

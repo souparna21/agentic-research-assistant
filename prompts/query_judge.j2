@@ -1,0 +1,22 @@
+{# Filter candidate expansion terms for topic drift. #}
+{# Variables: question (str), candidate_terms (list[str]) #}
+You are reviewing search-term candidates for a researcher's literature search.
+
+Original question:
+<question>{{ question }}</question>
+
+Candidate search terms:
+{% for t in candidate_terms %}
+- {{ t }}
+{% endfor %}
+
+For each candidate, decide: would someone asking the original question care about papers that match this search term?
+
+OUTPUT STRICT JSON:
+{
+  "verdicts": [
+    {"term": "<term>", "on_topic": true, "reason": "<one sentence>"}
+  ]
+}
+
+Be CONSERVATIVE. If a term is generic (covers many topics beyond the question) or tangential, set on_topic false.

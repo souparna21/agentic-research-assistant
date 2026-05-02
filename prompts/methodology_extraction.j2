@@ -1,0 +1,16 @@
+{# Variables: paper, passages #}
+Extract structured methodology attributes from the paper below.
+
+PAPER: "{{ paper.title | replace('"', "'") }}" (paper_id={{ paper.paper_id }})
+
+PASSAGES:
+{% for p in passages %}
+[P{{ paper.paper_id }}-{{ loop.index }}] {{ p.text }}
+{% endfor %}
+
+OUTPUT: STRICT JSON matching MethodologyExtraction:
+  - paper_id: "{{ paper.paper_id }}"
+  - datasets: list of dataset names (strings) mentioned in the passages
+  - techniques: list of technique/method names (strings)
+  - metrics: list of evaluation metric names (strings)
+Empty lists allowed when the passages do not mention these attributes.

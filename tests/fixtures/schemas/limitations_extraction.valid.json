@@ -1,0 +1,9 @@
+{
+  "paper_id": "paper1",
+  "limitations": [
+    {"text": "Retrieval accuracy bounds generation quality.", "citations": ["[Ppaper1-7]"]}
+  ],
+  "future_work": [
+    {"text": "Investigate HyDE query transformation.", "citations": ["[Ppaper1-8]"]}
+  ]
+}

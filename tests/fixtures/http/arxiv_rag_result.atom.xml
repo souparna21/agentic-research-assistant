@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <title type="html">ArXiv Query: search_query=ti:&quot;Retrieval-Augmented Generation&quot;</title>
+  <id>http://arxiv.org/api/query?search_query=ti:rag</id>
+  <updated>2026-04-17T00:00:00-04:00</updated>
+  <opensearch:totalResults xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">1</opensearch:totalResults>
+  <opensearch:startIndex xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">0</opensearch:startIndex>
+  <opensearch:itemsPerPage xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">1</opensearch:itemsPerPage>
+  <entry>
+    <id>http://arxiv.org/abs/2005.11401v4</id>
+    <updated>2021-04-12T00:00:00Z</updated>
+    <published>2020-05-22T00:00:00Z</published>
+    <title>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</title>
+    <summary>We introduce retrieval-augmented generation (RAG)...</summary>
+    <author><name>Patrick Lewis</name></author>
+    <author><name>Ethan Perez</name></author>
+    <arxiv:comment>Accepted at NeurIPS 2020.</arxiv:comment>
+    <link href="http://arxiv.org/abs/2005.11401v4" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/2005.11401v4" rel="related" type="application/pdf"/>
+    <arxiv:primary_category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed>

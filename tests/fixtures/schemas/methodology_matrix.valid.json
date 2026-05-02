@@ -1,0 +1,18 @@
+{
+  "rows": [
+    {
+      "paper_id": "paper1",
+      "paper_title": "Retrieval-Augmented Generation",
+      "datasets": ["Natural Questions"],
+      "techniques": ["DPR", "BART"],
+      "metrics": ["EM", "F1"]
+    },
+    {
+      "paper_id": "paper2",
+      "paper_title": "A Baseline for RAG",
+      "datasets": ["MS MARCO"],
+      "techniques": ["BM25"],
+      "metrics": ["nDCG"]
+    }
+  ]
+}

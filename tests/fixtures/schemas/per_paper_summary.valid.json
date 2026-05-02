@@ -1,0 +1,18 @@
+{
+  "paper_id": "paper1",
+  "objective": {
+    "text": "Introduce retrieval-augmented generation to reduce factual hallucination.",
+    "citations": ["[Ppaper1-1]"]
+  },
+  "methodology": {
+    "text": "Combine a dense passage retriever with a seq2seq generator trained end-to-end.",
+    "citations": ["[Ppaper1-2]", "[Ppaper1-3]"]
+  },
+  "findings": [
+    {"text": "Outperforms parametric seq2seq on open-domain QA.", "citations": ["[Ppaper1-4]"]},
+    {"text": "Retrieval source attribution improves provenance.", "citations": ["[Ppaper1-5]"]}
+  ],
+  "limitations": [
+    {"text": "Requires a high-quality dense retriever index.", "citations": ["[Ppaper1-6]"]}
+  ]
+}

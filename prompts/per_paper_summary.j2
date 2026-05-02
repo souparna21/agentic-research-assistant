@@ -1,0 +1,26 @@
+{# Variables: paper (Paper), passages (list[{paper_id, section, score, text}]) #}
+{# Produces: JSON matching PerPaperSummary schema #}
+You are analyzing a single academic paper.
+
+PAPER:
+- Title: "{{ paper.title | replace('"', "'") }}"
+- Authors: {{ paper.authors | join(", ") }}
+- Year: {{ paper.year or "unknown" }}
+- Paper ID: {{ paper.paper_id }}
+
+RETRIEVED PASSAGES FROM THIS PAPER (use as your sole source of truth):
+{% for p in passages %}
+[P{{ paper.paper_id }}-{{ loop.index }}] (section={{ p.section or "unknown" }}, score={{ "%.3f"|format(p.score) }})
+{{ p.text }}
+{% endfor %}
+
+TASK: Produce a structured summary. Every claim MUST cite at least one passage.
+Use the bracketed marker format EXACTLY as shown: [P{{ paper.paper_id }}-N].
+
+OUTPUT: STRICT JSON conforming to PerPaperSummary with fields:
+  - paper_id: "{{ paper.paper_id }}"
+  - objective: {text, citations: [...]}   (1-2 sentence objective)
+  - methodology: {text, citations: [...]}  (2-4 sentence methodology)
+  - findings: [{text, citations: [...]}, ...]   (2-5 bullet findings)
+  - limitations: [{text, citations: [...]}, ...] (1-4 bullet limitations)
+If a section cannot be supported from the passages, emit "[NOT IN PASSAGES]" in text.

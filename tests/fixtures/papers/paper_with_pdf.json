@@ -1,0 +1,16 @@
+{
+  "paper_id": "fixture:test-rag-001",
+  "title": "Test Paper - RAG Fixture",
+  "authors": ["Test Author"],
+  "year": 2024,
+  "venue": "Phase-1 Fixture",
+  "citation_count": 0,
+  "abstract": "A minimal test PDF for offline smoke tests.",
+  "pdf_url": "file://tests/fixtures/papers/paper_with_pdf.pdf",
+  "pdf_path": "tests/fixtures/papers/paper_with_pdf.pdf",
+  "pdf_source": "arxiv",
+  "extracted_md_path": null,
+  "extraction_ok": false,
+  "fallback_to_abstract": false,
+  "full_text_available": true
+}

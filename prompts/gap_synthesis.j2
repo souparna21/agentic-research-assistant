@@ -1,0 +1,17 @@
+{# Variables: matrix (MethodologyMatrix dict), limitations (list[LimitationsExtraction dicts]) #}
+Identify research gaps by diffing cross-paper methodology matrix vs per-paper limitations.
+
+METHODOLOGY MATRIX:
+{{ matrix | tojson(indent=2) }}
+
+PER-PAPER LIMITATIONS (citations are [P<paper_id>-N] from each paper):
+{% for lim in limitations %}
+- paper_id: {{ lim.paper_id }}
+  limitations: {{ lim.limitations | tojson }}
+  future_work: {{ lim.future_work | tojson }}
+{% endfor %}
+
+OUTPUT: STRICT JSON matching GapAnalysis:
+  - gaps: [{text, citations: ["[P<paper_id>-N]", ...]}, ...]
+Each gap MUST cite >= 1 passage (any paper). Gaps should identify what the matrix
+doesn't cover, or cross-paper shortcomings surfaced by the limitations.

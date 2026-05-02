@@ -1,0 +1,178 @@
+{
+  "analysis_stats": {
+    "analysis_failures": [],
+    "cross_paper_calls": 2,
+    "duration_ms": 0,
+    "per_paper_calls": 3,
+    "unsupported_claims": 0,
+    "verifier_calls": 1
+  },
+  "chunks_count": 1,
+  "comparison_path": "GOLDEN-SMOKE-STATE/comparison.json",
+  "config_snapshot": {
+    "cached_only": false,
+    "git_sha": "GOLDEN",
+    "model": "gemini/gemini-2.5-flash",
+    "temperature": 0.0
+  },
+  "extraction_stats": {
+    "duration_ms": 0,
+    "extraction_failures": [],
+    "header_footer_lines_stripped": 0,
+    "hidden_text_spans_stripped": 0,
+    "pdfs_attempted": 1,
+    "pdfs_extracted_ok": 1
+  },
+  "gaps_path": "GOLDEN-SMOKE-STATE/gaps.json",
+  "index_meta": {
+    "built_at": "GOLDEN-TIMESTAMP",
+    "cache_key": "all-MiniLM-L6-v2:1",
+    "dim": 384,
+    "model": "all-MiniLM-L6-v2"
+  },
+  "index_path": "GOLDEN-SMOKE-STATE/index/faiss.index",
+  "indexing_stats": {
+    "duplicate_chunks_dropped": 0,
+    "embedding_duration_ms": 0,
+    "index_build_duration_ms": 0,
+    "index_bytes": 0,
+    "papers_chunked": 1,
+    "total_chunks": 1,
+    "unique_chunks": 1
+  },
+  "papers": [
+    {
+      "abstract": "A minimal test PDF for offline smoke tests.",
+      "analysis_status": "succeeded",
+      "authors": [
+        "Test Author"
+      ],
+      "bibtex_key": "author_2024_test",
+      "citation_count": 0,
+      "extracted_md_path": "GOLDEN-SMOKE-STATE/papers/fixture:test-rag-001/extracted.md",
+      "extraction_meta": {
+        "header_footer_lines_stripped": 0,
+        "num_detected_sections": 0,
+        "pages": 1
+      },
+      "extraction_ok": true,
+      "fallback_to_abstract": false,
+      "full_text_available": true,
+      "paper_id": "fixture:test-rag-001",
+      "pdf_path": "<RUNS_DIR>/GOLDEN-SMOKE-STATE/pdfs/fixture:test-rag-001.pdf",
+      "pdf_source": "s2",
+      "pdf_url": "<FIXTURES>/tests/fixtures/papers/paper_with_pdf.pdf",
+      "title": "Test Paper - RAG Fixture",
+      "venue": "Phase-1 Fixture",
+      "year": 2024
+    },
+    {
+      "abstract": "This fixture exercises the abstract-only degradation path. No PDF is downloadable; the pipeline must handle this without halting.",
+      "analysis_status": "skipped",
+      "authors": [
+        "Fixture Author"
+      ],
+      "bibtex_key": null,
+      "citation_count": 42,
+      "extracted_md_path": null,
+      "extraction_meta": null,
+      "extraction_ok": false,
+      "fallback_to_abstract": true,
+      "full_text_available": false,
+      "paper_id": "s2:abstract-only-fixture-001",
+      "pdf_path": null,
+      "pdf_source": "abstract-only",
+      "pdf_url": null,
+      "title": "Abstract-Only Fixture Paper (no PDF available)",
+      "venue": "Phase-1 Fixture",
+      "year": 2023
+    }
+  ],
+  "question": "What is retrieval-augmented generation?",
+  "report_path": "GOLDEN-SMOKE-STATE/report.tex",
+  "report_stats": {
+    "bibtex_collision_fixes": 0,
+    "bibtex_keys": 1,
+    "latex_bytes": 0,
+    "latexmk_duration_ms": 0,
+    "pdf_bytes": 0,
+    "unresolved_citations": 0
+  },
+  "retrieval_stats": {
+    "abstract_only_count": 1,
+    "arxiv_fallback_hits": 0,
+    "duration_ms": 0,
+    "empty_query_terms": [],
+    "pdf_download_bytes": 2449,
+    "pdf_download_count": 1,
+    "pdf_download_failures": [],
+    "s2_429_retries": 0,
+    "s2_requests": 3,
+    "s2_total_results": 6,
+    "search_terms_submitted": 3
+  },
+  "run_id": "GOLDEN-SMOKE-STATE",
+  "runs_dir": "runs",
+  "search_terms": [
+    "retrieval-augmented generation",
+    "RAG hallucination mitigation",
+    "grounded text generation"
+  ],
+  "stage_reports": [
+    {
+      "duration_ms": 0.0,
+      "errors_count": 0,
+      "inputs_count": 1,
+      "outputs_count": 3,
+      "skipped_count": 0,
+      "stage": "query",
+      "warnings": []
+    },
+    {
+      "duration_ms": 0.0,
+      "errors_count": 0,
+      "inputs_count": 3,
+      "outputs_count": 2,
+      "skipped_count": 0,
+      "stage": "retrieval",
+      "warnings": []
+    },
+    {
+      "duration_ms": 0.0,
+      "errors_count": 0,
+      "inputs_count": 1,
+      "outputs_count": 1,
+      "skipped_count": 0,
+      "stage": "extraction",
+      "warnings": []
+    },
+    {
+      "duration_ms": 0.0,
+      "errors_count": 0,
+      "inputs_count": 1,
+      "outputs_count": 1,
+      "skipped_count": 0,
+      "stage": "indexing",
+      "warnings": []
+    },
+    {
+      "duration_ms": 0.0,
+      "errors_count": 0,
+      "inputs_count": 2,
+      "outputs_count": 1,
+      "skipped_count": 0,
+      "stage": "analysis",
+      "warnings": []
+    },
+    {
+      "duration_ms": 0.0,
+      "errors_count": 0,
+      "inputs_count": 1,
+      "outputs_count": 1,
+      "skipped_count": 0,
+      "stage": "report",
+      "warnings": []
+    }
+  ],
+  "summaries_dir": "GOLDEN-SMOKE-STATE/summaries"
+}

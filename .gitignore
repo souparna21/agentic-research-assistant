@@ -1,0 +1,41 @@
+# venv
+.venv/
+venv/
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# secrets — NEVER COMMIT
+.env
+.env.*
+!.env.example
+
+# runs (generated artifacts)
+# NOTE: demo-cache.tar.gz at repo root is committed intentionally (PKG-02).
+# It ships the --cached-only demo run and must NOT be ignored. Verify with:
+#     git check-ignore demo-cache.tar.gz   # must exit 1 (not ignored)
+runs/
+
+# one-off fixture regen scratch output (plan 03-09 — scripts/regen_smoke_fixtures.py
+# copies its tmp run tree here for post-run inspection; never commit)
+.tmp/
+
+# build
+dist/
+build/
+*.egg-info/
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

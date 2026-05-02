@@ -1,0 +1,16 @@
+{
+  "claims": [
+    {
+      "claim_text": "RAG outperforms parametric seq2seq on open-domain QA.",
+      "citations": ["[Ppaper1-4]"],
+      "verdict": "supported",
+      "reason": "Passage 4 reports EM gains."
+    },
+    {
+      "claim_text": "RAG requires zero training data.",
+      "citations": ["[Ppaper1-4]"],
+      "verdict": "unsupported",
+      "reason": "No passage mentions zero-shot operation."
+    }
+  ]
+}
