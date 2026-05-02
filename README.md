@@ -97,7 +97,7 @@ Every claim in the output traces back to a specific passage in a specific paper.
 │   ├── verifier.j2
 │   └── report_skeleton.tex.j2
 │
-├── tests/                          263 tests (pytest, offline, deterministic).
+├── tests/                          266 tests (pytest, offline, deterministic).
 │   ├── unit/                       Per-module unit tests.
 │   ├── integration/                Cross-module flow tests.
 │   ├── e2e/                        Smoke tests including --cached-only end-to-end.
@@ -326,19 +326,36 @@ What happens:
 
 This is the **safest demo path**. If your demo-room WiFi dies, this still works.
 
-### Path 2 — Live end-to-end demo (2–3 minutes)
+### Path 2 — Live end-to-end demo (5–6 minutes)
 
 ```bash
 uv run ara run "<your question>"
 ```
 
 You can narrate the architecture as the stage logs scroll by:
-- `stage_start: query` — Gemini expanding the question
-- `stage_start: retrieval` — arXiv calls + PDF downloads
-- `stage_start: extraction` — PyMuPDF + injection-defense firing
-- `stage_start: indexing` — embeddings + FAISS index build
-- `stage_start: analysis` — 4N+2 hierarchical RAG calls
-- `stage_start: report` — LaTeX assembly
+- `stage_start: query` — Gemini expanding the question (~3 s)
+- `stage_start: retrieval` — S2 search + arXiv PDF resolution (~150–170 s, dominated by arXiv's 3-second per-call politeness delay)
+- `stage_start: extraction` — PyMuPDF + injection-defense firing (~50 s)
+- `stage_start: indexing` — embeddings + FAISS index build (~10 s)
+- `stage_start: analysis` — 4N+2 hierarchical RAG calls (~110 s)
+- `stage_start: report` — LaTeX assembly (~20 ms)
+
+### Reference run on disk: `runs/20260502-190241-what-is-rag/`
+
+Headline measured numbers from `uv run ara run "What is RAG?"` on 2026-05-02 with authenticated S2:
+
+| Stage | Measurement |
+|---|---|
+| Query expansion | 3 search terms generated |
+| S2 retrieval | 30 raw hits, 0 retries, 29 papers after dedup |
+| PDF resolution | 10 PDFs (8 via arXiv fallback, 2 direct from S2), 19 abstract-only |
+| Extraction | 10/10 PDFs OK, **31 hidden injection spans stripped** |
+| Indexing | 551 chunks, 0 duplicates dropped |
+| Analysis | 30 per-paper + 2 cross-paper + 10 verifier = 42 LLM calls |
+| Verifier | **0 unsupported claims out of 10 papers** |
+| Report | 29.69 KB LaTeX, 10 BibTeX keys, **0 unresolved citations** |
+| Wall clock | ~331 s on CPU (~5.5 min) |
+| Cost | ≈ US$0.03 on `gemini-2.5-flash-lite` |
 
 ### Path 3 — Show prior live-run artifacts
 
@@ -347,17 +364,17 @@ If you have a previous live run preserved in `runs/<id>/`, open these files:
 - `report.tex` — the auto-generated literature review
 - `comparison.json` — cross-paper methodology matrix
 - `gaps.json` — research gap analysis with citations
-- `summaries/arxiv:*.json` — per-paper summaries with citation tags
+- `summaries/<paper-id>.json` — per-paper summaries with citation tags
 
 ### Pre-demo checklist (run the day before, not the day of)
 
 ```bash
-git clone https://github.com/souparna21/<repo>.git && cd <repo>
+git clone https://github.com/souparna21/agentic-research-assistant.git && cd agentic-research-assistant
 uv sync                                       # ~30 s
-cp .env.example .env                          # edit and add your API key
-uv run pytest -q                              # expect 263 passed in ~75 s
+cp .env.example .env                          # edit and add ARA_GEMINI_API_KEY + ARA_S2_API_KEY
+uv run pytest -q                              # expect 266 passed in ~80 s
 ./scripts/dress_rehearsal.sh                  # 4-second offline smoke
-uv run ara run "What is RAG?"                 # 2-3 min live (uses some quota)
+uv run ara run "What is RAG?"                 # 5-6 min live (uses some quota)
 ```
 
 If all four pass on the demo machine, you're ready.
@@ -365,7 +382,7 @@ If all four pass on the demo machine, you're ready.
 ### Suggested 20-minute demo flow
 
 1. **(2 min) Architecture overview** — slide 4 of the deck (six agents + shared state)
-2. **(1 min) Tests green** — `uv run pytest -q` shows 263 passed
+2. **(1 min) Tests green** — `uv run pytest -q` shows 266 passed
 3. **(1 min) Offline demo** — `uv run ara run "anything" --cached-only`
 4. **(4 min) Live run** — `ara run "<professor's question>"`, narrate the stages
 5. **(3 min) Walk through the auto-generated literature review** — open the produced `report.tex`, point at `[Pqi_2025_ar-3]` style citations, the methodology comparison, the research gaps
@@ -378,7 +395,7 @@ See `PRESENTATION_SCRIPT.md` for the full speaker-by-speaker script.
 ## Tests
 
 ```bash
-uv run pytest -q                  # 263 passed, 9 latex-skipped, 0 flakes
+uv run pytest -q                  # 266 passed, 9 latex-skipped, 0 flakes
 uv run pytest -q -m smoke         # just the e2e smoke tests
 uv run pytest -q -m latex         # latexmk-gated tests (only with TeX installed)
 ```

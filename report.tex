@@ -381,20 +381,26 @@ into the \texttt{ReportAgent}. Representative runtime on the 2-paper fixture cor
 under 30 seconds for the end-to-end smoke test on CPU, under 60 seconds for the
 offline dress-rehearsal (which copies the repo, runs \texttt{uv sync}, extracts
 \texttt{demo-cache.tar.gz}, runs \texttt{ara run --cached-only}, and verifies
-\texttt{report.pdf} magic bytes). Measured pipeline shape on a 10-paper live run
-executed on 2026-04-28 using the query ``How does retrieval-augmented generation
-reduce hallucination?'' (run ID
-\texttt{20260427-173618-how-does-retrieval-augmented-generation}): 10 papers
-retrieved (with arXiv used as the discovery layer because Semantic Scholar's
-unauthenticated endpoint was rate-limiting this IP at run time --- see
-\S\ref{sec:eval} for the full failure-mode discussion), all 10 PDFs successfully
-downloaded (20.0~MB aggregate, 0 abstract-only fallbacks), 657 chunks indexed
-across the corpus (range 19--159 chunks per paper, mean 65.7), 39 Gemini~2.5
-Flash-Lite calls across all stages (1 query expansion, 28 per-paper analysis
-calls, 2 cross-paper synthesis calls, 8 verifier calls), and a 24.9~KB
-\texttt{report.tex} written. End-to-end wall clock: 168~seconds on CPU
-(retrieval~18.4s + extraction~40.4s + indexing~8.8s + analysis~99.7s +
-report~0.02s).
+\texttt{report.pdf} magic bytes). The headline live-run measurement was
+captured on 2026-05-02 using the query ``What is RAG?'' against an
+authenticated Semantic Scholar endpoint (run ID
+\texttt{20260502-190241-what-is-rag}): 3 search terms expanded by the query
+agent, 30 raw S2 hits, 29 papers after dedup, 10 PDFs successfully downloaded
+(13.55~MB aggregate; 8 via the arXiv PDF-fallback chain after S2 returned
+metadata without an \texttt{openAccessPdf}, 2 directly from S2), 19 papers
+gracefully degraded to abstract-only, 31 hidden injection-vector spans stripped
+during extraction, 551 chunks indexed across the 10 full-text papers, 42
+Gemini~2.5 Flash-Lite calls across all stages (1 query expansion, 30 per-paper
+analysis calls, 2 cross-paper synthesis calls, 10 verifier calls), and a
+29.69~KB \texttt{report.tex} written with 10 BibTeX keys and 0 unresolved
+citations. End-to-end wall clock: 331~seconds on CPU (retrieval~162.7s,
+dominated by arXiv's 3-second per-call politeness delay; extraction~47.3s;
+indexing~10.5s; analysis~110.7s; report~0.02s). Crucially this run was
+\textbf{end-to-end clean}: \textbf{0 analysis failures}, \textbf{0 unsupported
+verifier verdicts}, \textbf{0 BibTeX collisions}, \textbf{0 abstract-only
+fallbacks among the analyzed-papers subset} --- the citation-validator fix
+(see \S\ref{sec:eval}, ``failure mode 1'') eliminated the per-paper drop-rate
+that had blocked earlier live runs.
 
 A key architectural proof-point is the single-writer-per-field invariant on
 \texttt{PipelineState}: each of the six stages is registered in a frozen
@@ -421,88 +427,116 @@ property rather than merely asserting it.
 
 \section{Evaluation}\label{sec:eval}
 
-The system was evaluated using a real end-to-end live run on 2026-04-28 against a
-freshly-retrieved 10-paper corpus (run ID
-\texttt{20260427-173618-how-does-retrieval-augmented-generation}, all artifacts
-preserved on disk). The numbers below are measured, not projected. The corpus is
-intentionally small --- a course project cannot practically assemble a
-gold-labelled benchmark --- so the evaluation is designed to demonstrate the
-pipeline working on real data and to surface real failure modes, not to publish
-leaderboard results.
+The system was evaluated using two end-to-end live runs against
+freshly-retrieved corpora, all artifacts preserved on disk. The numbers below
+are measured, not projected. Both corpora are intentionally small --- a course
+project cannot practically assemble a gold-labelled benchmark --- so the
+evaluation is designed to demonstrate the pipeline working on real data, to
+surface real failure modes, and to verify that the corresponding fixes
+eliminate them on a subsequent rerun.
 
-\textbf{Retrieval quality.} On the live 657-chunk index built from the 10-paper
-corpus, top-$k$ retrieval ($k=5$) via \texttt{FaissVectorStore.search} was
-exercised with a 5-query retrieval set spanning the main topic, methodology,
-limitations, future work, and a specific multi-hop query. Measured inner-product
-scores on L2-normalized vectors ranged from \textbf{0.432 to 0.682}, with a mean
-of \textbf{0.603} across all 25 returned chunks. Note that MiniLM-L6-v2's
-empirical cosine-similarity floor on unrelated passages sits around 0.30--0.40,
-which is well below the naive probability interpretation where 0.0 would mean
-``unrelated'' --- the observed mean of 0.603 places retrieved passages
-comfortably above the noise floor. This validates the choice of
-\texttt{all-MiniLM-L6-v2} paired with \texttt{faiss.IndexFlatIP} and
-\texttt{normalize\_embeddings=True} (inner-product on normalized vectors is
-mathematically equivalent to cosine similarity) for the target corpus scale of
-hundreds to low thousands of chunks.
+The headline run is \texttt{20260502-190241-what-is-rag} on 2026-05-02: query
+``What is RAG?'', authenticated Semantic Scholar discovery (free-tier S2 API
+key), citation-validator hardening already applied (see ``failure mode 1''
+below). 29 papers retrieved (30 raw S2 hits, 1 dedup), 10 PDFs successfully
+downloaded, 551 chunks indexed, 42 LLM calls, 29.69~KB \texttt{report.tex}.
+The earlier reference run is
+\texttt{20260427-173618-how-does-retrieval-augmented-generation} on 2026-04-28:
+query ``How does retrieval-augmented generation reduce hallucination?'', arXiv-
+as-discovery fallback (S2 unauthenticated and IP-blocked at the time).
+
+\textbf{Retrieval quality.} On the May-2 live 551-chunk index built from the
+10 full-text papers, top-$k$ retrieval ($k=5$) via
+\texttt{FaissVectorStore.search} is exercised by the analysis stage's per-paper
+RAG calls. On the earlier April-28 657-chunk index a dedicated retrieval probe
+spanning topic, methodology, limitations, future work, and a multi-hop query
+returned 25 chunks with inner-product scores on L2-normalized vectors ranging
+from \textbf{0.432 to 0.682}, mean \textbf{0.603}. MiniLM-L6-v2's empirical
+cosine-similarity floor on unrelated passages sits around 0.30--0.40, so the
+observed mean of 0.603 places retrieved passages comfortably above the noise
+floor. This validates the choice of \texttt{all-MiniLM-L6-v2} paired with
+\texttt{faiss.IndexFlatIP} and \texttt{normalize\_embeddings=True}
+(inner-product on normalized vectors is mathematically equivalent to cosine
+similarity) for the target corpus scale of hundreds to low thousands of chunks.
 
 \textbf{Citation grounding.} The per-paper verifier
 (\texttt{analysis\_schemas.VerifierVerdict}) post-hoc checks every generated
 claim against its cited passage using a separate LLM call at temperature~0. On
-the live 10-paper run, the verifier was invoked on each of the 8 papers that
-completed per-paper analysis (8 \texttt{verifier\_calls}). Across those 8
-verifier calls, the model returned \textbf{0 \texttt{unsupported} verdicts} ---
-no claim received the \texttt{[UNVERIFIED]} tag in the final report. This is a
-stronger result than the per-claim grounding rates reported on smaller fixture
-runs and is consistent with the strict prompt instruction
-``\textit{passages are your sole source of truth}'' combined with the
-schema-pinned JSON response format.
+the May-2 live run, the verifier was invoked on every one of the 10 papers
+that completed per-paper analysis (\texttt{verifier\_calls=10}). Across those
+10 calls, the model returned \textbf{0 \texttt{unsupported} verdicts} --- no
+claim received the \texttt{[UNVERIFIED]} tag in the final report. The earlier
+April-28 run produced an identical 0/8 result on its 8 successfully-analyzed
+papers. Aggregating: \textbf{0 unsupported verdicts across 18 verifier calls
+on two independent corpora}. This is consistent with the strict prompt
+instruction ``\textit{passages are your sole source of truth}'' combined with
+the schema-pinned JSON response format, and supports the hierarchical-RAG
+hypothesis that grounding generation against retrieved passages plus an
+explicit re-check step contains the multi-document hallucination problem
+identified by \citet{belem2024multidoc}.
 
-\textbf{Observed failure mode 1: per-paper analysis citation format drift.} The
-most frequent real-world failure observed on the live run is the LLM occasionally
-emitting citation strings that do not match the strict \texttt{[P<paper\_id>-N]}
-regex. \textbf{2 of 10 papers (20\%) failed per-paper analysis} and were dropped
-from the final report by the per-paper try/except (ANL-09): paper
-\texttt{arxiv:2604.17982} emitted a citation \texttt{Parxiv:2604.17982-7}
-(missing the surrounding brackets), and paper \texttt{arxiv:2412.12881} emitted
-a \texttt{Claim} with an empty \texttt{citations} list, both of which the
-schema's \texttt{field\_validator} on \texttt{Claim.citations} rejected with a
-\texttt{pydantic.ValidationError}. The remaining 8 papers were summarized,
-methodology-extracted, limitations-extracted, verified, and rendered into the
-final report --- the per-paper isolation worked exactly as designed.
+\textbf{Prompt-injection defense.} The May-2 run logged \textbf{31 hidden
+injection-vector spans stripped} during extraction across the 10 PDFs --- real
+adversarial-shaped spans (white-on-white, sub-half-point, off-mediabox, or
+zero-bbox) that the span-level scrubber removed before any chunk reached the
+embedding or LLM stages. This is empirical confirmation that the defense
+described in \S2.3 fires on real-world academic PDFs, not just on the
+synthetic \texttt{adversarial\_prompt\_injection.pdf} test fixture.
 
-\textbf{Observed failure mode 2: Semantic Scholar IP rate-limiting.} The live
-run was originally intended to use Semantic Scholar as the discovery layer, but
-the unauthenticated S2 endpoint hard-blocked our IP with sticky HTTP~429
-responses for the duration of the run. This is the empirical reality of the
-$\approx$1-request-per-second unauthenticated quota: once tripped, the cooldown
-window is unpredictable. The system falls back gracefully to arXiv-direct
-discovery (a workaround we implemented in
-\texttt{scripts/live\_run\_arxiv\_first.py}), which produced a usable corpus,
-but at the cost of arXiv's lower-precision title-keyword search compared with
-S2's semantic ranking. Future work: register for an S2 API key (1~RPS sustained
-on the free tier, no IP-block sensitivity) which is a config-only change in
-\texttt{S2Client(api\_key=\dots)}.
+\textbf{Observed failure mode 1: per-paper analysis citation format drift
+(now mitigated).} The most frequent real-world failure observed on the
+April-28 run was the LLM occasionally emitting citation strings without the
+strict \texttt{[}\dots\texttt{]} brackets the schema regex requires. On the
+April-28 run, \textbf{2 of 10 papers (20\%) failed} per-paper analysis on this
+basis and were dropped by the per-paper try/except (ANL-09). On a subsequent
+diagnostic run on 2026-05-02 with longer 40-character S2 paper-ids
+(\texttt{20260502-183941-what-is-rag}), the bracket-drop failure scaled to
+\textbf{10 of 26 papers (38\%)} --- the longer the paper-id, the more often
+the LLM ``forgets'' the surrounding brackets. We hardened the validator to
+accept both bracketed \texttt{[P<paper\_id>-N]} and bare \texttt{P<paper\_id>-N}
+forms and to normalize the bare form to bracketed before storage. The headline
+May-2 run \texttt{20260502-190241-what-is-rag} re-ran the same query against
+the same authenticated S2 endpoint after the fix and recorded \textbf{0
+analysis failures across all 10 successfully-extracted papers}.
+
+\textbf{Observed failure mode 2: Semantic Scholar IP rate-limiting (now
+mitigated).} The April-28 run was originally intended to use Semantic Scholar
+as the discovery layer, but the unauthenticated S2 endpoint hard-blocked our
+IP with sticky HTTP~429 responses for the duration of the run. This is the
+empirical reality of the $\approx$1-request-per-second unauthenticated quota:
+once tripped, the cooldown window is unpredictable. We initially worked
+around this with an arXiv-first discovery script
+(\texttt{scripts/live\_run\_arxiv\_first.py}). The proper fix landed in two
+steps: an arXiv-as-discovery fallback path inside \texttt{RetrievalAgent}
+itself (commit \texttt{73b5898}, runs cleanly when S2 is down), and an
+authenticated S2 client wired through \texttt{S2Client(api\_key=\dots)} from
+\texttt{Settings.s2\_api\_key} (commit \texttt{a5bf5d7}). The May-2 headline
+run shows the authenticated path working: \textbf{30 S2 results across 3
+search terms with 0 retries and 0 \texttt{arxiv\_discovery\_hits}}, vs.
+\textbf{0 S2 results / 10 \texttt{arxiv\_fallback\_hits}} on the April-28 run.
 
 \textbf{Observed failure mode 3: BibTeX key collisions did not occur.} The
 collision resolver (\texttt{resolve\_key\_collisions} in
-\texttt{src/ara/services/latex.py}) is in place and tested, but on this
-particular 10-paper run \textbf{0 collisions} occurred (\texttt{bibtex\_keys=8},
-\texttt{bibtex\_collision\_fixes=0}, \texttt{unresolved\_citations=0}). Author
-surname diversity in the retrieved set was sufficient to keep all keys unique.
-The resolver remains a correctness requirement because corpus shape is
-unpredictable (a query that pulls many papers from a single high-output lab
-would trip it), but on this run it sat idle.
+\texttt{src/ara/services/latex.py}) is in place and tested, but on neither
+live run did any collisions occur (May-2: \texttt{bibtex\_keys=10}, April-28:
+\texttt{bibtex\_keys=8}, both with \texttt{bibtex\_collision\_fixes=0} and
+\texttt{unresolved\_citations=0}). Author surname diversity in both
+retrieved sets was sufficient to keep all keys unique. The resolver remains a
+correctness requirement because corpus shape is unpredictable (a query that
+pulls many papers from a single high-output lab would trip it), but on these
+runs it sat idle.
 
 \textbf{Quota adequacy.} The free-tier quota for individual Gemini models is
 substantially tighter than initial planning estimates: \textbf{20 requests per
 day} per model on the free tier (e.g., \texttt{gemini-2.5-flash},
 \texttt{gemini-2.5-flash-lite}), not the 500~RPD originally assumed. A full
-10-paper live run consumes 39 LLM calls --- well over the 20-RPD free-tier
-ceiling. We resolved this by enabling Gemini billing (Tier~1, 1500~RPD), with
-the cost of one full live run remaining negligible at approximately
-US\$0.03 on \texttt{gemini-2.5-flash-lite} input/output token rates. The
-\texttt{--cached-only} mode and the committed \texttt{demo-cache.tar.gz} cover
-the offline-demo scenario for graders without billing access.
+10-paper live run consumes 39--42 LLM calls --- well over the 20-RPD
+free-tier ceiling. We resolved this by enabling Gemini billing (Tier~1,
+1500~RPD), with the cost of one full live run remaining negligible at
+approximately US\$0.03--0.04 on \texttt{gemini-2.5-flash-lite} input/output
+token rates. The \texttt{--cached-only} mode and the committed
+\texttt{demo-cache.tar.gz} cover the offline-demo scenario for graders without
+billing access.
 
 \section{Lessons Learned}
 

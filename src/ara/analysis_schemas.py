@@ -29,7 +29,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-_CITE_RE = re.compile(r"\[P[^\]]+-\d+\]")
+_CITE_RE_BRACKETED = re.compile(r"\[P[^\]]+-\d+\]")
+_CITE_RE_BARE = re.compile(r"P[^\[\]\s]+-\d+")
 
 
 
@@ -39,7 +40,12 @@ class Claim(BaseModel):
 
     Validation (ANL-02):
       - ``citations`` must be non-empty (every claim needs >= 1 citation)
-      - each citation must fullmatch ``[P<paper_id>-N]`` where N is a positive int
+      - each citation must match ``[P<paper_id>-N]`` (bracketed) OR
+        ``P<paper_id>-N`` (bare). Bare form is auto-normalized to bracketed
+        before storage. The bare-form acceptance was added 2026-05-02 after
+        the LLM repeatedly emitted bare citations against long S2 paper-ids,
+        crashing 10/26 papers in the live run despite a strict-JSON schema.
+        N must be a positive integer.
     """
 
     model_config = {"extra": "forbid"}
@@ -52,10 +58,17 @@ class Claim(BaseModel):
     def citations_nonempty_and_wellformed(cls, v: list[str]) -> list[str]:
         if not v:
             raise ValueError("every claim needs >= 1 citation")
+        normalized: list[str] = []
         for c in v:
-            if not _CITE_RE.fullmatch(c):
-                raise ValueError(f"citation '{c}' doesn't match [P<paper_id>-N]")
-        return v
+            if _CITE_RE_BRACKETED.fullmatch(c):
+                normalized.append(c)
+            elif _CITE_RE_BARE.fullmatch(c):
+                normalized.append(f"[{c}]")
+            else:
+                raise ValueError(
+                    f"citation '{c}' doesn't match [P<paper_id>-N] or P<paper_id>-N"
+                )
+        return normalized
 
 
 

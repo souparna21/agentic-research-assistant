@@ -42,7 +42,13 @@ def test_all_schemas_validate_committed_fixtures() -> None:
 
 
 def test_claim_citations_are_well_formed() -> None:
-    """Task 3-05-02 -- Claim rejects empty AND malformed citations (ANL-02 tripwire)."""
+    """Task 3-05-02 -- Claim rejects empty AND malformed citations.
+
+    2026-05-02: bare ``P<id>-N`` is now accepted and normalized to
+    ``[P<id>-N]``. Reason: LLMs repeatedly emit the bare form against
+    long S2 paper-ids; the strict regex was crashing 10/26 papers per
+    live run. Bracketed remains the canonical storage shape.
+    """
     from ara.analysis_schemas import Claim
 
     Claim(text="RAG boosts QA.", citations=["[Ppaper1-1]"])
@@ -53,8 +59,19 @@ def test_claim_citations_are_well_formed() -> None:
     with pytest.raises(pydantic.ValidationError, match="doesn't match"):
         Claim(text="x", citations=["[1]"])
 
+    bare = Claim(text="x", citations=["Ppaper3-7"])
+    assert bare.citations == ["[Ppaper3-7]"]
+
+    bare_long = Claim(
+        text="x",
+        citations=["P659bf9ce7175e1ec266ff54359e2bd76e0b7ff31-2"],
+    )
+    assert bare_long.citations == [
+        "[P659bf9ce7175e1ec266ff54359e2bd76e0b7ff31-2]"
+    ]
+
     with pytest.raises(pydantic.ValidationError, match="doesn't match"):
-        Claim(text="x", citations=["P1-1"])
+        Claim(text="x", citations=["1"])
 
     Claim(text="x", citations=["[Ppaper2-4]", "[Ppaper7-12]"])
 
