@@ -128,7 +128,13 @@ def _build_live_stages(settings):  # noqa: ANN001, ANN202 — internal CLI helpe
 
     query = QueryAgent(llm=llm, prompts=prompts)
     retrieval = RetrievalAgent(
-        s2=S2Client(),
+        s2=S2Client(
+            api_key=(
+                settings.s2_api_key.get_secret_value()
+                if settings.s2_api_key
+                else None
+            )
+        ),
         arxiv=ArxivClient(),
         downloader=PdfDownloader(),
         year_since=settings.retrieval_year_since,

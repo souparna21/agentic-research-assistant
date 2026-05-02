@@ -229,14 +229,18 @@ cd <repo>
 # 3. Create the hermetic virtual environment (uv reads uv.lock)
 uv sync
 
-# 4. Configure your Gemini API key
+# 4. Configure your API keys
 cp .env.example .env
 # Edit .env and set:
 #   ARA_GEMINI_API_KEY=<your-key>
 #   GEMINI_API_KEY=<same-key>           # LiteLLM auto-discovers this name
 #   ARA_LLM_MODEL=gemini/gemini-2.5-flash-lite
-# Get a free API key at https://aistudio.google.com/apikey
+#   ARA_S2_API_KEY=<your-s2-key>        # optional but strongly recommended
+# Get a free Gemini key at https://aistudio.google.com/apikey
+# Get a free Semantic Scholar key at https://www.semanticscholar.org/product/api#api-key-form
 ```
+
+> **About the Semantic Scholar key:** without it, the public-IP throttle aggressively blocks repeat callers and the pipeline routinely returns 0 papers. The key gives you an authenticated 1 RPS quota that does not IP-block. If `ARA_S2_API_KEY` is unset, the pipeline still runs — `RetrievalAgent` falls back to arXiv-as-discovery when S2 returns zero hits — but real S2 access is meaningfully better.
 
 ### Optional: LaTeX toolchain
 

@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 2048
     gemini_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
+    s2_api_key: SecretStr | None = None
 
     runs_dir: str = "runs"
     prompts_dir: str = "prompts"

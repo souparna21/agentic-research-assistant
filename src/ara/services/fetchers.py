@@ -170,7 +170,12 @@ class S2Client:
                 raise cause from exc
             raise
 
-        return [self._normalize(p) for p in results]
+        out: list[S2SearchResult] = []
+        for p in results:
+            out.append(self._normalize(p))
+            if len(out) >= limit:
+                break
+        return out
 
     @staticmethod
     def _normalize(p: Any) -> S2SearchResult:
