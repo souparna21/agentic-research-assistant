@@ -122,6 +122,11 @@ def _build_live_stages(settings):  # noqa: ANN001, ANN202 — internal CLI helpe
 
     llm = LiteLLMClient(model=settings.llm_model, max_tokens=settings.llm_max_tokens)
     prompts_dir = Path(settings.prompts_dir)
+    if not prompts_dir.is_absolute() and not prompts_dir.exists():
+        package_root = Path(__file__).resolve().parent.parent.parent
+        candidate = package_root / "prompts"
+        if candidate.exists():
+            prompts_dir = candidate
     prompts = PromptLoader(prompts_dir=prompts_dir)
     latex_templates = LatexTemplateLoader(prompts_dir=prompts_dir)
     embedder = MiniLMEmbedder()
